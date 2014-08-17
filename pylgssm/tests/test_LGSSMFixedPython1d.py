@@ -5,6 +5,8 @@ import numpy.testing as npt
 
 import matplotlib.pyplot as plt
 
+from nose.tools import nottest as nottest
+
 from ..models import LGSSMFixedPython as LGSSMFPy
 
 class TestLGSSMFixedPython1d(object):
@@ -35,9 +37,7 @@ class TestLGSSMFixedPython1d(object):
     def tearDown(self):
         pass
 
-    def test_pass(self):
-        assert 1 == 1
-
+    # Comment out nottest to enable this test.
     @nottest
     def test_kalman_filter(self):
         m = self.m
