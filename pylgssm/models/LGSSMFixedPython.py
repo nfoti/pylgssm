@@ -1,34 +1,8 @@
 from __future__ import division
 
+from .LGSSMBase import LGSSMBase
+
 import numpy as np
-
-
-class LGSSMBase(object):
-    """ Linear Gaussian state space model base class.
-
-        x_t = A*x_{t-1} + v_t, v_t \sim N(0, Q)
-        y_t = C*x_t     + w_t, w_t \sim N(0, R)
-
-        x_0 \sim N(\mu_0, S_0)
-
-        x_t \in \mathbb{R}^K
-        y_t \in \mathbb{R}^p
-    """
-
-    def __init__(self):
-        self._datas = list()
-        self._state_dists = list()
-        self._state_seqs = list()   # These are for sampling
-
-    def add_data(self, data):
-        self._datas.append(data)
-        self._state_dists.append(None)
-        self._state_seqs.append(None)
-
-    @staticmethod
-    def sample(self, T): 
-        pass
-
 
 class LGSSMFixedPython(LGSSMBase):
     """ Python implementation with fixed parameters.
@@ -84,10 +58,21 @@ class LGSSMFixedPython(LGSSMBase):
 
         return X, Y
 
-    def kalman_filter(self, idx=None):
-        """ Follows algorithm of pg. 57 of "Bayesian Filtering and Smoothing.
+
+class LGSSMFixedSarkkaPython(LGSSMFixedPython):
+    """ Implement RTS Smoother as in "Bayesian Filtering and Smooting" book.
+        This coressponds to the sequential version in Beal's thesis.
+    """
+
+    def kalman_filter(self, didx=None):
+        """ Follows algorithm on pg. 57 of "Bayesian Filtering and Smoothing.
+
+            didx: int or iterable of ints, subset of observations sequences to
+                  consider.
             
-            Updates `_state_dists` member variable.
+            Updates `_state_filter_dists` member variable.
+
+            TODO: Return the filtering distributions.
         """
         C = self._C
         A = self._A
@@ -97,12 +82,17 @@ class LGSSMFixedPython(LGSSMBase):
         mu_0 = self._mu_0
         S_0 = self._S_0
 
-        if idx is not None:
-            datas = self._data[idx]
-        else:
+        if didx is  None:
             datas = self._datas
+        elif type(didx) is int:
+            datas = self._data[didx]
+        else:
+            # This will barf if didx is not an iterable of ints
+            datas = [self._data[idx] for idx in didx]
 
         Ts = [d.shape[0] for d in datas]
+
+        filter_dists = list()
 
         for i, (data, T) in enumerate(zip(datas, Ts)):
             kal_m = np.empty((T, K))
@@ -128,4 +118,28 @@ class LGSSMFixedPython(LGSSMBase):
                 mbar = np.dot(A, kal_m[t,:])
                 Pbar = np.dot(A, np.dot(kal_P[t], A.T)) + Q
 
-            self._state_dists[i] = (kal_m, kal_P)
+            filter_dists.append((kal_m, kal_P))
+
+        return filter_dists
+
+    def rts_smoother(self):
+        """ Follows algorithm on pg. 57 of "Bayesian Filtering and Smoothing.
+
+            didx: int or iterable of ints, subset of observations sequences to
+                  consider.
+
+            Returns means and covariances for smoothing distributions.
+        """
+
+        return None
+
+
+
+class LGSSMFixedBealPython(LGSSMFixedPython):
+    """ Implements RTS smoother using a forward messages, \alpha(x_t) and
+        backward messages, \beta(x_t), so that
+        p(x_t | y_1:T) \propto \alpha(x_t)*\beta(x_t).  This is what the rest
+        of our algorithms will look like, I just wanted two implementations to
+        compare against.
+    """
+    pass

@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 
 from nose.tools import nottest as nottest
 
-from ..models import LGSSMFixedPython as LGSSMFPy
+from ..models.LGSSMFixedPython import LGSSMFixedSarkkaPython as LGSSMFPy
 
 class TestLGSSMFixedPython1d(object):
 
@@ -38,17 +38,17 @@ class TestLGSSMFixedPython1d(object):
         pass
 
     # Comment out nottest to enable this test.
-    @nottest
+    #@nottest
     def test_kalman_filter(self):
         m = self.m
-        m.kalman_filter()
+        filter_dists = m.kalman_filter()
 
         # Plot results
         for i in xrange(self.nobs):
             t = np.arange(self.T)
             Y = m._datas[i]
             X = self.Xs[i]
-            kal_m, kal_P = m._state_dists[i]
+            kal_m, kal_P = filter_dists[i]
             kal_m = np.squeeze(kal_m)
             q95 = 1.96*np.sqrt(np.squeeze(kal_P))
             plt.figure()
