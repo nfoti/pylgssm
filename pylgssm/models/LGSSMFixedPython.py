@@ -196,4 +196,191 @@ class LGSSMFixedBealPython(LGSSMFixedPython):
         of our algorithms will look like, I just wanted two implementations to
         compare against.
     """
-    pass
+
+    def kalman_filter(self, didx=None):
+        """ Follows algorithm on pg. 57 of "Bayesian Filtering and Smoothing.
+
+            didx: int or iterable of ints, subset of observations sequences to
+                  consider.
+            
+            Returns:
+                filtering_dists : list of tuples, one for each observation
+                                  sequence, containing the means and covariances
+                                  of the filtering distribution.
+        """
+        C = self._C
+        A = self._A
+        Q = self._Q
+        R = self._R
+        p, K = C.shape
+        mu_0 = self._mu_0
+        S_0 = self._S_0
+
+        if didx is  None:
+            datas = self._datas
+        elif type(didx) is int:
+            datas = self._data[didx]
+        else:
+            # This will barf if didx is not an iterable of ints
+            datas = [self._data[idx] for idx in didx]
+
+        Ts = [d.shape[0] for d in datas]
+
+        filter_dists = list()
+
+        for i, (data, T) in enumerate(zip(datas, Ts)):
+            Mf = np.empty((T, K))
+            Pf = np.empty((T, K, K))
+
+            # Initial prediction step
+            Rinv = np.linalg.inv(R)
+            Qinv = np.linalg.inv(Q)
+            S0inv = np.linalg.inv(S_0)
+
+            Sstar = np.linalg.inv(S0inv + np.dot(A.T, np.dot(Qinv, A)))
+            Jtm1 = S0inv
+            mu_tm1 = mu_0
+
+            # TODO: Fix this, works(ish) for 1d but not for 2d.
+            for t in xrange(T):
+
+                y_t = np.atleast_2d(data[t,:]).T
+
+                Saux_tm1 = np.linalg.inv(Jtm1 + np.dot(A.T, np.dot(Qinv, A)))
+                Jt = Qinv + np.dot(C.T, np.dot(Rinv, C)) \
+                     + np.dot(A, np.dot(Saux_tm1, A.T))
+                Pf[t,:,:] = np.linalg.inv(Jt)
+
+                m = np.squeeze(np.dot(C.T, np.dot(Rinv, y_t)))
+                mu = np.dot(A, np.dot(Saux_tm1, np.dot(Jtm1, mu_tm1)))
+                mu = np.squeeze(mu)
+                Mf[t,:] = np.dot(Pf[t,:,:], m + mu)
+
+                Jtm1 = Jt
+                mu_tm1 = Mf[t,:]
+
+            filter_dists.append((Mf, Pf))
+
+        return filter_dists
+
+    def _backward_msgs(self, didx=None):
+        """ Compute Beal's backward messages.
+
+            didx: int or iterable of ints, subset of observations sequences to
+                  consider.
+
+            Returns:
+                list of tuples, one for each obs. sequence, with the means and
+                INFORMATION matrices of the backward messages.
+
+            These are NOT the same as BP messages as they include the
+            likelihood.
+        """
+        C = self._C
+        A = self._A
+        Q = self._Q
+        R = self._R
+        p, K = C.shape
+        mu_0 = self._mu_0
+        S_0 = self._S_0
+
+        if didx is  None:
+            datas = self._datas
+        elif type(didx) is int:
+            datas = self._data[didx]
+        else:
+            # This will barf if didx is not an iterable of ints
+            datas = [self._data[idx] for idx in didx]
+
+        Ts = [d.shape[0] for d in datas]
+
+        backward_msgs = list()
+
+        for i, (data, T) in enumerate(zip(datas, Ts)):
+            Mb = np.empty((T, K))
+            Pbi = np.empty((T, K, K))
+
+            Mb[-1,:] = np.zeros_like(mu_0)
+            Pbi[-1,:,:] = np.zeros_like(S_0)
+
+            Rinv = np.linalg.inv(R)
+            Qinv = np.linalg.inv(Q)
+
+            for t in reversed(xrange(1,T)):
+                y_t = np.atleast_2d(data[t,:])
+                Psi = np.linalg.inv(Qinv + np.dot(C.T, np.dot(Rinv, C)) + Pbi[t,:,:])
+                Pbi[t-1,:,:] = np.dot(A, np.dot(Qinv, A)) \
+                             - np.dot(A.T, np.dot(Psi, A))
+                m = np.dot(C.T, np.dot(Rinv, y_t))
+                mu = np.dot(Pbi[t,:,:], Mb[t,:])
+                tmp = np.dot(A.T, np.dot(Psi, m + mu))
+                Mb[t-1,:] = np.linalg.solve(Pbi[t-1,:,:], tmp)
+
+            backward_msgs.append((Mb, Pbi))
+
+        return backward_msgs
+
+    def rts_smoother(self, didx=None, filter_dists=None, backward_msgs=None):
+        """ Follows algorithm on pg. 57 of "Bayesian Filtering and Smoothing.
+
+            didx : int or iterable of ints, subset of observations sequences to
+                  consider.
+            filter_dists : list of filtering distributions for the observation
+                           sequences (as produced by `kalman_filter` above).
+                           If not provided `kalman_filter` is called.
+            backward_msgs : list of backward messages for the observations
+                            sequences (as produced by `_backward_msgs` above).
+                            If not provided `_backward_msgs` is called.
+
+            Returns:
+            
+            smoothing_dists : list of tuples, one for each observation
+                              sequence, containing the means and covariances of
+                              the smoothing distributions.
+        """
+        C = self._C
+        A = self._A
+        Q = self._Q
+        R = self._R
+        p, K = C.shape
+        mu_0 = self._mu_0
+        S_0 = self._S_0
+
+        if didx is  None:
+            datas = self._datas
+        elif type(didx) is int:
+            datas = self._data[didx]
+        else:
+            # This will barf if didx is not an iterable of ints
+            datas = [self._data[idx] for idx in didx]
+
+        # `kalman_filter` handles didx properly
+        if filter_dists is None:
+            filter_dists = self.kalman_filter(didx)
+        if backward_msgs is None:
+            backward_msgs = self._backward_msgs(didx)
+
+        Ts = [d.shape[0] for d in datas]
+
+        smoothing_dists = list()
+
+        for i, (data, T) in enumerate(zip(datas, Ts)):
+            Ms = np.empty((T, K))
+            Ps = np.empty((T, K, K))
+            
+            Mf = filter_dists[i][0]
+            Pf = filter_dists[i][1]
+
+            Mb = backward_msgs[i][0]
+            Pbi = backward_msgs[i][1]
+
+            for t in xrange(T):
+                Pfinv = np.linalg.inv(Pf[t,:,:])
+                tmp = np.dot(Pfinv, Mf[t,:]) + np.dot(Pbi[t,:,:], Mb[t,:])
+
+                Ps[t,:,:] = np.linalg.inv(Pfinv + Pbi[t,:,:])
+                Ms[t,:] = np.dot(Ps[t,:,:], tmp)
+
+            smoothing_dists.append((Ms, Ps))
+
+        return smoothing_dists
