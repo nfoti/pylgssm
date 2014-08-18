@@ -38,7 +38,7 @@ class TestLGSSMFixedPython1d(object):
         pass
 
     # Comment out nottest to enable this test.
-    #@nottest
+    @nottest
     def test_kalman_filter(self):
         m = self.m
         filter_dists = m.kalman_filter()
@@ -60,5 +60,35 @@ class TestLGSSMFixedPython1d(object):
             plt.plot(t, kal_m - q95, '--', color='#4682b4')
             plt.legend(['Data', 'Latent state',
                         'Filtered estimate (+-2*std.  dev)'])
+            plt.title("Data set %d" % i)
+            plt.show()
+
+    # Comment out nottest to enable this test.
+    @nottest
+    def test_rts_smoother(self):
+        m = self.m
+        filter_dists = m.kalman_filter()
+        smoothing_dists = m.rts_smoother(filter_dists=filter_dists)
+
+        # Plot results
+        for i in xrange(self.nobs):
+            t = np.arange(self.T)
+            Y = m._datas[i]
+            X = self.Xs[i]
+            Mf, Pf = filter_dists[i]
+            Mf = np.squeeze(Mf)
+            Ms, Ps = smoothing_dists[i]
+            Ms = np.squeeze(Ms)
+            q95 = 1.96*np.sqrt(np.squeeze(Ps))
+            plt.figure()
+            plt.plot(t, Y, '.')
+            plt.hold(True)
+            plt.plot(t, X)
+            plt.plot(t, Mf)
+            plt.plot(t, Ms)
+            plt.plot(t, Ms + q95, '--', color='#4682b4')
+            plt.plot(t, Ms - q95, '--', color='#4682b4')
+            plt.legend(['Data', 'Latent state',
+                        'Filtered estimate', 'Smoothed estimate (+- 2sd)'])
             plt.title("Data set %d" % i)
             plt.show()

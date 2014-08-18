@@ -92,3 +92,35 @@ class TestLGSSMFixedPython2d(object):
             #            'Filtered estimate'])
             plt.title("Data set %d" % i)
             plt.show()
+
+    # Comment out nottest to enable this test.
+    #@nottest
+    def test_rts_smoother(self):
+        m = self.m
+        filter_dists = m.kalman_filter()
+        smoothing_dists = m.rts_smoother(filter_dists=filter_dists)
+
+        # Plot results
+        for i in xrange(self.nobs):
+            t = np.arange(self.T)
+            Y = m._datas[i]
+            X = self.Xs[i]
+            Mf, Pf = filter_dists[i]
+            Ms, Ps = smoothing_dists[i]
+            plt.figure()
+            plt.plot(Y[:,0], Y[:,1], '.')
+            plt.hold(True)
+            plt.plot(X[:,0], X[:,1])
+            plt.plot(Mf[:,0], Mf[:,1])
+            plt.plot(Ms[:,0], Ms[:,1])
+            plt.legend(['Data', 'Latent state',
+                        'Filtered estimate', 'Smoothed estimate'])
+            for k in xrange(0, self.T, 5):
+                #mu = np.squeeze(Mf[k,:2])
+                #Lmbda = np.squeeze(Mf[k,:2,:2])
+                mu = np.squeeze(Ms[k,:2])
+                Lmbda = np.squeeze(Ps[k,:2,:2])
+                plot_gaussian_2D(mu, Lmbda, color='#4682b4', alpha=0.7,
+                        centermarker=False)
+            plt.title("Data set %d" % i)
+            plt.show()
