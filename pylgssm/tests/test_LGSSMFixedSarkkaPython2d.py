@@ -90,7 +90,7 @@ class TestLGSSMFixedPython2d(object):
                         centermarker=False)
             #plt.legend(['Data', 'Latent state',
             #            'Filtered estimate'])
-            plt.title("Data set %d" % i)
+            plt.title("LGSSMFixedSarkkaPython: Data set %d" % i)
             plt.show()
 
     # Comment out nottest to enable this test.
@@ -122,5 +122,5 @@ class TestLGSSMFixedPython2d(object):
                 Lmbda = np.squeeze(Ps[k,:2,:2])
                 plot_gaussian_2D(mu, Lmbda, color='#4682b4', alpha=0.7,
                         centermarker=False)
-            plt.title("Data set %d" % i)
+            plt.title("LGSSMFixedSarkkaPython: Data set %d" % i)
             plt.show()

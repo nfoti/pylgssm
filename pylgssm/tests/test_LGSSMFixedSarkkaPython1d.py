@@ -60,7 +60,7 @@ class TestLGSSMFixedPython1d(object):
             plt.plot(t, kal_m - q95, '--', color='#4682b4')
             plt.legend(['Data', 'Latent state',
                         'Filtered estimate (+-2*std.  dev)'])
-            plt.title("Data set %d" % i)
+            plt.title("LGSSMFixedSarkkaPython: Data set %d" % i)
             plt.show()
 
     # Comment out nottest to enable this test.
@@ -90,5 +90,5 @@ class TestLGSSMFixedPython1d(object):
             plt.plot(t, Ms - q95, '--', color='#4682b4')
             plt.legend(['Data', 'Latent state',
                         'Filtered estimate', 'Smoothed estimate (+- 2sd)'])
-            plt.title("Data set %d" % i)
+            plt.title("LGSSMFixedSarkkaPython: Data set %d" % i)
             plt.show()
