@@ -94,7 +94,7 @@ class TestLGSSMFixedPython2d(object):
             plt.show()
 
     # Comment out nottest to enable this test.
-    #@nottest
+    @nottest
     def test_rts_smoother(self):
         m = self.m
         filter_dists = m.kalman_filter()
