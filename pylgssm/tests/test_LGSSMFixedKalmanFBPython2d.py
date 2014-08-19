@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 
 from nose.tools import nottest as nottest
 
-from ..models.LGSSMFixedPython import LGSSMFixedBealPython as LGSSMFPy
+from ..models.LGSSMFixedPython import LGSSMFixedKalmanFBPython as LGSSMFPy
 from ..util.plot import plot_gaussian_2D
 
 class TestLGSSMFixedPython2d(object):
@@ -78,7 +78,6 @@ class TestLGSSMFixedPython2d(object):
             Y = m._datas[i]
             X = self.Xs[i]
             kal_m, kal_P = filter_dists[i]
-            import ipdb; ipdb.set_trace()
             plt.figure()
             plt.plot(Y[:,0], Y[:,1], '.')
             plt.hold(True)
@@ -91,15 +90,15 @@ class TestLGSSMFixedPython2d(object):
                         centermarker=False)
             plt.legend(['Data', 'Latent state',
                         'Filtered estimate'])
-            plt.title("LGSSMFixedBealPython: Data set %d" % i)
+            plt.title("LGSSMFixedKalmanFBPython: Data set %d" % i)
             plt.show()
 
     # Comment out nottest to enable this test.
-    @nottest
+    #@nottest
     def test_rts_smoother(self):
         m = self.m
         filter_dists = m.kalman_filter()
-        smoothing_dists = m.rts_smoother(filter_dists=filter_dists)
+        smoothing_dists = m.rts_smoother()
 
         # Plot results
         for i in xrange(self.nobs):
@@ -123,5 +122,5 @@ class TestLGSSMFixedPython2d(object):
                 Lmbda = np.squeeze(Ps[k,:2,:2])
                 plot_gaussian_2D(mu, Lmbda, color='#4682b4', alpha=0.7,
                         centermarker=False)
-            plt.title("LGSSMFixedBealPython: Data set %d" % i)
+            plt.title("LGSSMFixedKalmanFBPython: Data set %d" % i)
             plt.show()
