@@ -96,8 +96,8 @@ class LGSSMFixedSarkkaPython(LGSSMFixedPython):
         filter_dists = list()
 
         for i, (data, T) in enumerate(zip(datas, Ts)):
-            kal_m = np.empty((T, K))
-            kal_P = np.empty((T, K, K))
+            Mf = np.empty((T, K))
+            Pf = np.empty((T, K, K))
 
             # Initial prediction step
             mbar = np.dot(A, mu_0)
@@ -112,14 +112,14 @@ class LGSSMFixedSarkkaPython(LGSSMFixedPython):
 
                 K_t = np.dot(Pbar, np.dot(C.T, np.linalg.inv(S_t)))
 
-                kal_m[t,:] = mbar + np.dot(K_t, v_t)
-                kal_P[t,:,:] = Pbar - np.dot(K_t, np.dot(S_t, K_t.T))
+                Mf[t,:] = mbar + np.dot(K_t, v_t)
+                Pf[t,:,:] = Pbar - np.dot(K_t, np.dot(S_t, K_t.T))
 
                 # Prediction step for next time step depends on t
-                mbar = np.dot(A, kal_m[t,:])
-                Pbar = np.dot(A, np.dot(kal_P[t], A.T)) + Q
+                mbar = np.dot(A, Mf[t,:])
+                Pbar = np.dot(A, np.dot(Pf[t], A.T)) + Q
 
-            filter_dists.append((kal_m, kal_P))
+            filter_dists.append((Mf, Pf))
 
         return filter_dists
 
@@ -232,32 +232,20 @@ class LGSSMFixedBealPython(LGSSMFixedPython):
             Mf = np.empty((T, K))
             Pf = np.empty((T, K, K))
 
-            # Initial prediction step
-            Rinv = np.linalg.inv(R)
-            Qinv = np.linalg.inv(Q)
-            S0inv = np.linalg.inv(S_0)
+            mbar = np.dot(A, mu_0)
+            Pbar = np.dot(A, np.dot(S_0, A.T)) + Q
 
-            Sstar = np.linalg.inv(S0inv + np.dot(A.T, np.dot(Qinv, A)))
-            Jtm1 = S0inv
-            mu_tm1 = mu_0
-
-            # TODO: Fix this, works(ish) for 1d but not for 2d.
             for t in xrange(T):
+                tmp = np.linalg.inv(np.dot(C, np.dot(Pbar, C.T)) + R)
+                K_t = np.dot(Pbar, np.dot(C.T, tmp))
 
-                y_t = np.atleast_2d(data[t,:]).T
+                y = np.squeeze(data[t,:])
+                r = y - np.dot(C, mbar)
+                Mf[t,:] = mbar + np.dot(K_t, r)
+                Pf[t,:,:] = Pbar - np.dot(K_t, np.dot(C, Pbar))
 
-                Saux_tm1 = np.linalg.inv(Jtm1 + np.dot(A.T, np.dot(Qinv, A)))
-                Jt = Qinv + np.dot(C.T, np.dot(Rinv, C)) \
-                     + np.dot(A, np.dot(Saux_tm1, A.T))
-                Pf[t,:,:] = np.linalg.inv(Jt)
-
-                m = np.squeeze(np.dot(C.T, np.dot(Rinv, y_t)))
-                mu = np.dot(A, np.dot(Saux_tm1, np.dot(Jtm1, mu_tm1)))
-                mu = np.squeeze(mu)
-                Mf[t,:] = np.dot(Pf[t,:,:], m + mu)
-
-                Jtm1 = Jt
-                mu_tm1 = Mf[t,:]
+                mbar = np.dot(A, Mf[t,:])
+                Pbar = np.dot(A, np.dot(Pf[t,:,:], A.T)) + Q
 
             filter_dists.append((Mf, Pf))
 
@@ -298,13 +286,10 @@ class LGSSMFixedBealPython(LGSSMFixedPython):
 
         for i, (data, T) in enumerate(zip(datas, Ts)):
             Mb = np.empty((T, K))
-            Pbi = np.empty((T, K, K))
+            Pb = np.empty((T, K, K))
 
             Mb[-1,:] = np.zeros_like(mu_0)
             Pbi[-1,:,:] = np.zeros_like(S_0)
-
-            Rinv = np.linalg.inv(R)
-            Qinv = np.linalg.inv(Q)
 
             for t in reversed(xrange(1,T)):
                 y_t = np.atleast_2d(data[t,:])
