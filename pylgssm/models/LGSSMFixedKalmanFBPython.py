@@ -21,12 +21,13 @@ class LGSSMFixedKalmanFBPython(LGSSMFixedPython):
             
             Returns:
                 alphas : list of tuples, one for each observation
-                                  sequence, containing the means and covariances
-                                  of the filtering distribution.
+                                  sequence, containing the information
+                                  parameters of the filtering distribution.
 
 
             The messages are stored in information form so that we can combine
-            them with the backward messages trivially.
+            them with the backward messages trivially (and for numerical
+            reasons).
         """
         C = self._C
         A = self._A
