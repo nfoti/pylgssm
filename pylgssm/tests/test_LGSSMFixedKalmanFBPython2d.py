@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 
 from nose.tools import nottest as nottest
 
-from ..models.LGSSMFixedPython import LGSSMFixedKalmanFBPython as LGSSMFPy
+from ..models.LGSSMFixedKalmanFBPython import LGSSMFixedKalmanFBPython as LGSSMFPy
 from ..util.plot import plot_gaussian_2D
 
 class TestLGSSMFixedPython2d(object):
@@ -94,7 +94,7 @@ class TestLGSSMFixedPython2d(object):
             plt.show()
 
     # Comment out nottest to enable this test.
-    #@nottest
+    @nottest
     def test_rts_smoother(self):
         m = self.m
         filter_dists = m.kalman_filter()

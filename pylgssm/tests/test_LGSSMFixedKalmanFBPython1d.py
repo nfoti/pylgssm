@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 
 from nose.tools import nottest as nottest
 
-from ..models.LGSSMFixedPython import LGSSMFixedKalmanFBPython as LGSSMFPy
+from ..models.LGSSMFixedKalmanFBPython import LGSSMFixedKalmanFBPython as LGSSMFPy
 
 class TestLGSSMFixedPython1d(object):
 

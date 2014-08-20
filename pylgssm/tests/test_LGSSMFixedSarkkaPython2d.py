@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 
 from nose.tools import nottest as nottest
 
-from ..models.LGSSMFixedPython import LGSSMFixedSarkkaPython as LGSSMFPy
+from ..models.LGSSMFixedSarkkaPython import LGSSMFixedSarkkaPython as LGSSMFPy
 from ..util.plot import plot_gaussian_2D
 
 class TestLGSSMFixedPython2d(object):
