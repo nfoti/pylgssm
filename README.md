@@ -3,6 +3,11 @@ pylgssm
 
 Linear Gaussian state space models.
 
+To Do
+-----
+
+- Make `*Base` classes abstract
+
 
 Notes
 -----
