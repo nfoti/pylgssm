@@ -6,6 +6,7 @@ Linear Gaussian state space models.
 To Do
 -----
 
+- **Fix BP version of RTS smoother.**
 - Make `*Base` classes abstract
 
 
