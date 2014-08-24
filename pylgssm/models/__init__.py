@@ -4,3 +4,4 @@ import LGSSMBase
 import LGSSMFixedPython
 import LGSSMFixedSarkkaPython
 import LGSSMFixedKalmanFBPython
+import LGSSMFixedBPPython
